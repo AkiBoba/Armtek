@@ -34,7 +34,7 @@ public class ArmGoodInfo {
     private String description;
     @Column("other") //Другое
     private String other;
-    @Column("url") //Другое
+    @Column("url") //url
     private String url;
 
     @Override

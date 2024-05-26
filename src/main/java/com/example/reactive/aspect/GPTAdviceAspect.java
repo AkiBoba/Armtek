@@ -18,6 +18,7 @@ public class GPTAdviceAspect {
     private static Map<String, Integer> aspectMapResult = new HashMap<>();
     AtomicInteger countOfParser = new AtomicInteger(0);
     AtomicInteger countOfGoodsLinks = new AtomicInteger(0);
+    AtomicInteger countOfGoodsInfo = new AtomicInteger(0);
 
     @AfterReturning(value = "com.example.reactive.aspect.LoggingAspect.isGPTMethod()", returning = "result")
     public void loggingReturningGetMethods(JoinPoint joinPoint, Object result) {
@@ -33,6 +34,14 @@ public class GPTAdviceAspect {
        log.info("aspectMapResult {} & {}", joinPoint.getArgs(), result);
        log.info("aspectMapResult Size = {}", aspectMapResult.size());
        log.info("countOfParsed = {}", countOfGoodsLinks.incrementAndGet());
+    }
+
+    @AfterReturning(value = "com.example.reactive.aspect.LoggingAspect.isGetGoodsInfoMethod()", returning = "result")
+    public void loggingReturningGetGoodInfoMethods(JoinPoint joinPoint, Object result) {
+       aspectMapResult.put(Arrays.toString(joinPoint.getArgs()), (Integer) result);
+       log.info("aspectMapResult {} & {}", joinPoint.getArgs(), result);
+       log.info("aspectMapResult Size = {}", aspectMapResult.size());
+       log.info("countOfParsed = {}", countOfGoodsInfo.incrementAndGet());
     }
 
 }

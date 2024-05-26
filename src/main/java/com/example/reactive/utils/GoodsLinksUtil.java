@@ -40,6 +40,9 @@ public class GoodsLinksUtil {
                 }
             } catch (Exception e) {
                 log.error("Ошибка парсинга урла {} \n {}", url, e.getMessage());
+                if (e.getMessage().replaceAll("\\s", "").equals(" HTTP error fetching URL".replaceAll("\\s", ""))) {
+                    log.error("thread {}", Thread.currentThread().getName());
+                }
             }
         }
             for (Element element : elements) {

@@ -1,10 +1,13 @@
 package com.example.reactive.controller;
 
+import com.example.reactive.domain.ArmGoodInfo;
 import com.example.reactive.domain.ArmatekGoodLink;
 import com.example.reactive.domain.ArmatekLink;
 import com.example.reactive.repository.ArmGoodsLinksRepo;
 import com.example.reactive.repository.ArmLinksRepo;
+import com.example.reactive.repository.ArmtekGoodInfoRepository;
 import com.example.reactive.utils.ArmtekParserErrorsUtil;
+import com.example.reactive.utils.GoodInfoUtil;
 import com.example.reactive.utils.GoodsLinksUtil;
 import com.example.reactive.utils.ParseExcelFile;
 import lombok.RequiredArgsConstructor;
@@ -12,10 +15,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
-import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -29,6 +30,8 @@ public class ParserController {
     private final ArmGoodsLinksRepo armGoodsLinksRepo;
     private final ParseExcelFile parseExcelFile;
     private final GoodsLinksUtil goodsLinksUtil;
+    private final ArmtekGoodInfoRepository goodInfoRepository;
+    private final GoodInfoUtil goodInfoUtil;
 
     /**
      * Метод получает адрес, где находятся ссылки на все каталоги сайта
@@ -52,7 +55,8 @@ public class ParserController {
     }
 
     /**
-     * Метод получает списки адресов из репозитория и из файла, список из файла уменьшает на список из репозитория, и повторно парсит адреса для получения ссылок на пагинаты
+     * Метод получает списки адресов из репозитория и из файла, список из файла уменьшает
+     * на список из репозитория, и повторно парсит адреса для получения ссылок на пагинаты
      * @throws InterruptedException
      */
     @GetMapping("/re_parser")
@@ -62,7 +66,7 @@ public class ParserController {
          * Получаем список адресов из файла
          */
         List<String> urlsList = parseExcelFile.getUrles();
-
+        //проверяем и удаляем лишнее в адресе, остается только адрес до знака ?
         urlsList = urlsList.stream().parallel().map(s->s.split("\\?")[0]).collect(Collectors.toList());
 
         Flux<ArmatekLink> flux = armLinksRepo.findAll();
@@ -145,6 +149,43 @@ public class ParserController {
             log.info("url - {}", url);
             }
         );
+    }
+
+    /**
+     * Загружает из файла адреса, загружает адреса из БД, получает не загруженные адреса в БД, и эти адреса записывает в БД
+     * @throws InterruptedException
+     */
+    @GetMapping("/saveGoodsInfo")
+    public void saveGoodInfo() throws InterruptedException {
+        log.info("starting parsing goods info");
+        List<String> urlsInDb = new ArrayList<>();
+        List<String> urlsForParsing = new ArrayList<>();
+        Flux<ArmGoodInfo> armatekLinkFlux = goodInfoRepository.findAll();
+        Flux<ArmatekGoodLink> goodLinkFlux = armGoodsLinksRepo.findAll();
+
+        armatekLinkFlux
+                .parallel()
+                .runOn(Schedulers.parallel())
+                .map(ArmGoodInfo::getUrl)
+                .doOnNext(urlsInDb::add)
+                .subscribe();
+        Thread.sleep(10000);
+
+        goodLinkFlux
+                .parallel()
+                .runOn(Schedulers.parallel())
+                .map(ArmatekGoodLink::getLink)
+                .doOnNext(urlsForParsing::add)
+                .subscribe();
+        Thread.sleep(10000);
+
+        urlsForParsing.removeAll(urlsInDb);
+
+        log.info("urlsForParsing size = {}", urlsForParsing.size());
+
+        urlsForParsing.stream().parallel().forEach(goodInfoUtil::getGoodsInfo);
+//        goodInfoUtil.getGoodsInfo("https://armtek.ru/product/nabor-klyuchey-kombinirovannyh-treshchetochnyh-8sht-total-40885684");
+
     }
 
     private void getListNotSavedUrls(Flux<String> urlsFlux) {

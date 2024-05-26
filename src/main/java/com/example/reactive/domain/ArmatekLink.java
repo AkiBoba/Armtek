@@ -21,10 +21,6 @@ public class ArmatekLink implements Comparable<ArmatekLink> {
     @Column("parent_link")
     private String parentLink;
 
-    public ArmatekLink(String link) {
-        this.link = link;
-    }
-
     public ArmatekLink(String link, String parentLink) {
         this.link = link;
         this.parentLink = parentLink;

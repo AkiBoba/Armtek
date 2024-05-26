@@ -19,4 +19,9 @@ public class LoggingAspect {
 
     }
 
+    @Pointcut("within(com.example.reactive.utils.GoodInfoUtil) && execution(public int getGoodsInfo(..))")
+    public void isGetGoodsInfoMethod() {
+
+    }
+
 }
