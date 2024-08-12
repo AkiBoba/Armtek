@@ -12,6 +12,8 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 
 @Slf4j
@@ -21,6 +23,7 @@ public class GoodsLinksUtil {
     private final ArmGoodsLinksRepo armGoodsLinksRepo;
 
     public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.2 (KHTML, like Gecko) Chrome/15.0.874.120 Safari/535.2";
+    List<String> errorsUrls = new LinkedList<>();
 
     /**
      * Получает все ссылки на товары на страницах из списка, переданного как параметр
@@ -31,7 +34,7 @@ public class GoodsLinksUtil {
         log.info("String url = {}", url);
         List<ArmatekGoodLink> urlsList = new ArrayList<>();
         List<Element> elements = new ArrayList<>();
-        while (elements.isEmpty()) {
+        while (elements.isEmpty() && !Thread.currentThread().isInterrupted()) {
             try {
                 Document doc = Jsoup.connect(url).timeout(1000).userAgent(USER_AGENT).get();
                 elements = doc.select("a[class=title]");
@@ -41,7 +44,12 @@ public class GoodsLinksUtil {
             } catch (Exception e) {
                 log.error("Ошибка парсинга урла {} \n {}", url, e.getMessage());
                 if (e.getMessage().replaceAll("\\s", "").equals(" HTTP error fetching URL".replaceAll("\\s", ""))) {
-                    log.error("thread {}", Thread.currentThread().getName());
+                    armGoodsLinksRepo.deleteByLink(url);
+                    return 0;
+                } else {
+                    if (checkErrorAndUrl(url)) {
+                        return 0;
+                    }
                 }
             }
         }
@@ -61,5 +69,11 @@ public class GoodsLinksUtil {
         log.info("urlsList.size() = {}", urlsList.size());
         return  urlsList.size();
 
+    }
+
+    private boolean checkErrorAndUrl(String url) {
+        errorsUrls.add(url);
+        int occurrences = Collections.frequency(errorsUrls, url);
+        return occurrences > 3;
     }
 }

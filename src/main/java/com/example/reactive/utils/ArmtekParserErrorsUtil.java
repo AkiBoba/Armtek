@@ -1,31 +1,25 @@
 package com.example.reactive.utils;
 
-import com.example.reactive.domain.ArmGoodInfo;
 import com.example.reactive.domain.ArmatekLink;
-import com.example.reactive.domain.GoodsInfoError;
 import com.example.reactive.repository.ArmLinksRepo;
-import com.example.reactive.repository.ArmtekGoodInfoRepository;
-import com.example.reactive.repository.GoodsInfoErrorRepo;
 import lombok.RequiredArgsConstructor;
-import lombok.SneakyThrows;
 import lombok.extern.slf4j.Slf4j;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ArmtekParserErrorsUtil {
-    private final GoodsInfoErrorRepo goodsInfoErrorRepo;
-    private final ArmtekGoodInfoRepository armtekGoodInfoRepository;
     private final ArmLinksRepo armLinksRepo;
 
     public static final String USER_AGENT = "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/535.2 (KHTML, like Gecko) Chrome/15.0.874.120 Safari/535.2";
